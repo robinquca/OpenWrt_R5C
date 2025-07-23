@@ -31,7 +31,7 @@ jobs:
         run: |
           # echo "src-git helloworld https://github.com/fw876/helloworld" >> ./feeds.conf.default 
           git clone https://github.com/kenzok8/openwrt-packages.git
-          mkdir /openwrt/package/openwrt-packages
+          mkdir ./openwrt/package/openwrt-packages
           # mv ./openwrt-packages/luci-app-aliddns ./package/openwrt-packages/luci-app-aliddns
           # mv ./openwrt-packages/luci-app-eqos ./package/openwrt-packages/luci-app-eqos
           # mv ./openwrt-packages/luci-app-wolplus ./package/openwrt-packages/luci-app-wolplus
