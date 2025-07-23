@@ -117,7 +117,7 @@ jobs:
           # CONFIG_PACKAGE_kmod-mt7922-firmware=y
           # CONFIG_PACKAGE_mt7922bt-firmware=y
 
-          # CONFIG_PACKAGE_luci-theme-argon=y
+          CONFIG_PACKAGE_luci-theme-argon=y
 
           EOF
 
