@@ -1,0 +1,189 @@
+name: build-compose
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Compile model firmware
+        required: true
+        type: choice
+        options:
+          - "r4se"
+          - "r5c"
+          - "x86-64"
+      version:
+        description: Compile model version firmware
+        required: true
+        default: docker
+        type: choice
+        options:
+          - "docker"
+      kmod:
+        description: kmod in firmware
+        required: true
+        default: false
+        type: boolean
+
+env:
+  MODEL: ${{ inputs.model }}
+  VERSION: ${{ inputs.version }}
+  KMODS_IN_FIRMWARE: ${{ inputs.kmod }}
+  UPLOAD_RELEASE: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      OPENWRTROOT: ${{ steps.clone.outputs.OPENWRTROOT }}
+      PLATFORM: ${{ steps.compile.outputs.PLATFORM }}
+      TARGET: ${{ steps.compile.outputs.TARGET }}
+      SUBTARGET: ${{ steps.compile.outputs.SUBTARGET }}
+      FIRMWARE: ${{ steps.compile.outputs.FIRMWARE }}
+      GENERATE_STATUS: ${{ steps.generate.outputs.GENERATE_STATUS }}
+      RELEASE_NAME: ${{ steps.tag.outputs.RELEASE_NAME }}
+      RELEASE_TAG: ${{ steps.tag.outputs.RELEASE_TAG }}
+      RELEASE_SUCCESS: ${{ steps.tag.outputs.RELEASE_SUCCESS }}
+      
+    steps:
+
+    - name: Free disk space
+      run: |
+        sudo -E swapoff -a
+        sudo -E rm -f /swapfile
+        sudo -E docker image prune -a -f
+        sudo -E systemctl stop docker
+        sudo -E snap set system refresh.retain=2
+        sudo -E apt-get -y purge dotnet* firefox clang* gcc-10* ghc* google* hhvm* llvm* mono* mongo* mysql* openjdk* php* zulu*
+        sudo -E apt-get -y autoremove --purge
+        sudo -E apt-get clean
+        sudo -E rm -rf /etc/mysql /etc/php /usr/lib/jvm /usr/libexec/docker /usr/local /usr/src/* /var/lib/docker /var/lib/gems /var/lib/mysql /var/lib/snapd /etc/skel /opt/{microsoft,az,hostedtoolcache,cni,mssql-tools,pipx} /usr/share/{az*,dotnet,swift,miniconda,gradle*,java,kotlinc,ri,sbt} /root/{.sbt,.local,.npm}
+        sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
+        rm -rf ~/{.cargo,.dotnet,.rustup}
+        [ -n "$AGENT_TOOLSDIRECTORY" ] && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+
+    - name: Init build dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E rm -rf /etc/apt/sources.list.d
+        sudo -E apt-get update -y
+        sudo -E apt-get install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+        bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
+        git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev vpnc \
+        libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz aria2 lib32gcc-s1 \
+        mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pip libpython3-dev qemu-utils \
+        rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev libfuse-dev
+        echo "deb http://archive.ubuntu.com/ubuntu/ bionic-security main" | sudo tee -a /etc/apt/sources.list
+        sudo -E apt-get update
+        sudo -E apt-cache policy libssl1.0-dev
+        sudo -E apt-get install -y libssl1.0-dev kmod
+        sudo -E apt-get clean -y
+        git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
+        df -h
+    
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Chmod Scripts
+      run: |
+        chmod +x build/scripts/*.sh
+        
+    - name: Clone Source Code
+      id: clone
+      run: |
+        source build/scripts/01_source_code.sh
+        IMAGE=ghcr.io/gngpp/openwrt-build-cache:"$MODEL"_"$VERSION"
+        echo "OPENWRTROOT=$OPENWRTROOT" >> $GITHUB_ENV
+        echo "OPENWRTROOT=$OPENWRTROOT" >> $GITHUB_OUTPUT
+        echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+        echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT
+
+    - name: Feeds Settings
+      id: update
+      run: |
+        cd $OPENWRTROOT
+        source ../build/scripts/02_feeds_setting.sh
+        source ../build/scripts/03_feeds_update.sh
+
+    - name: Community Packages
+      run: | 
+        cd $OPENWRTROOT
+        source ../build/scripts/04_community_package.sh
+        
+    - name: Target Settings
+      run: |
+        cd $OPENWRTROOT
+        source ../build/scripts/05_target_setting.sh
+
+    - name: Show Config
+      run: |
+        cd $OPENWRTROOT
+        cat .config
+
+    - name: Download DL
+      run: |
+        cd $OPENWRTROOT
+        source ../build/scripts/06_download_dl.sh
+
+    - name: Compile Toolchain
+      run: | 
+        cd $OPENWRTROOT
+        source ../build/scripts/07_compile_toolchain.sh
+
+    - name: Compile Packages
+      id: compile
+      run: |
+        cd $OPENWRTROOT
+        source ../build/scripts/08_compile_package.sh
+        echo "PLATFORM=$PLATFORM" >> $GITHUB_ENV
+        echo "PLATFORM=$PLATFORM" >> $GITHUB_OUTPUT
+        echo "TARGET=$TARGET" >> $GITHUB_ENV
+        echo "TARGET=$TARGET" >> $GITHUB_OUTPUT
+        echo "SUBTARGET=$SUBTARGET" >> $GITHUB_ENV
+        echo "SUBTARGET=$SUBTARGET" >> $GITHUB_OUTPUT
+        echo "FIRMWARE=$FIRMWARE" >> $GITHUB_ENV
+        echo "FIRMWARE=$FIRMWARE" >> $GITHUB_OUTPUT
+        echo "COMPILE_STATUS=success" >> $GITHUB_OUTPUT
+
+    - name: Generate Firmware
+      if: steps.compile.outputs.COMPILE_STATUS == 'success'
+      id: generate
+      run: |
+        cd $OPENWRTROOT
+        source ../build/scripts/09_generate_firmware.sh
+        echo "GENERATE_STATUS=success"  >> $GITHUB_OUTPUT
+        
+    - name: Generate release tag
+      id: tag
+      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      run: |
+          tag="$TARGET/$SUBTARGET"
+          echo "RELEASE_TAG=$tag" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=$(date +"%Y.%m.%d") for $tag" >> $GITHUB_OUTPUT
+          echo "console address: http://openwrt.lan
+                default password: password" > release.txt
+          echo "RELEASE_SUCCESS=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware to release
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.RELEASE_SUCCESS == 'success' && !cancelled() && env.UPLOAD_RELEASE == 'true'
+      env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      with:
+          name: ${{ steps.tag.outputs.RELEASE_NAME }}
+          tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
+          files: ${{ env.FIRMWARE }}/*
+          body_path: release.txt
+
+    - name: Remove old Releases
+      uses: dev-drprasad/delete-older-releases@v0.1.0
+      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      with:
+          keep_latest: 20
+          delete_tags: true
+      env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+
