@@ -66,11 +66,12 @@ jobs:
           # Storage
           # CONFIG_PACKAGE_autosamba=y
 
-
           # APP
           # CONFIG_PACKAGE_luci-app-aria2=y
+          CONFIG_PACKAGE_luci-app-firewall=y
           CONFIG_PACKAGE_luci-app-ddns=n
           CONFIG_PACKAGE_luci-app-ddns-go=y
+          CONFIG_PACKAGE_ddns-scripts_cloudflare.com-v4=y
           CONFIG_PACKAGE_luci-app-diskman=y
           CONFIG_PACKAGE_luci-app-dockerman=y
           CONFIG_PACKAGE_luci-app-frpc=y
@@ -97,6 +98,9 @@ jobs:
           # CONFIG_PACKAGE_luci-app-passwall=y
           # CONFIG_PACKAGE_luci-app-wol=n
           # CONFIG_PACKAGE_luci-app-wolplus=y
+          CONFIG_PACKAGE_luci-app-store=y
+          CONFIG_PACKAGE_luci-app-ssr-plus=y
+          CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_NaiveProxy=y
           
           # WLAN
           CONFIG_PACKAGE_wpad=y
