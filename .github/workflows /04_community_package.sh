@@ -9,9 +9,7 @@ on:
         required: true
         type: choice
         options:
-          - "r4se"
           - "r5c"
-          - "x86-64"
       version:
         description: Compile model version firmware
         required: true
@@ -155,28 +153,12 @@ jobs:
         cd $OPENWRTROOT
         source ../build/scripts/09_generate_firmware.sh
         echo "GENERATE_STATUS=success"  >> $GITHUB_OUTPUT
-        
-    - name: Generate release tag
-      id: tag
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      run: |
-          tag="$TARGET/$SUBTARGET"
-          echo "RELEASE_TAG=$tag" >> $GITHUB_OUTPUT
-          echo "RELEASE_NAME=$(date +"%Y.%m.%d") for $tag" >> $GITHUB_OUTPUT
-          echo "console address: http://openwrt.lan
-                default password: password" > release.txt
-          echo "RELEASE_SUCCESS=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware to release
-      uses: softprops/action-gh-release@v1
-      if: steps.tag.outputs.RELEASE_SUCCESS == 'success' && !cancelled() && env.UPLOAD_RELEASE == 'true'
-      env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-      with:
-          name: ${{ steps.tag.outputs.RELEASE_NAME }}
-          tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
-          files: ${{ env.FIRMWARE }}/*
-          body_path: release.txt
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bin
+          path: openwrt/bin/
 
     - name: Remove old Releases
       uses: dev-drprasad/delete-older-releases@v0.1.0
