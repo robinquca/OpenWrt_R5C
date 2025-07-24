@@ -48,8 +48,6 @@ jobs:
 
       - name: Custom configure file
         run: |
-          sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
-          rm -f ./.config*
           touch ./.config
           cat >> .config <<EOF
           # Device type
