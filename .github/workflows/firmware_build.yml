@@ -72,6 +72,7 @@ jobs:
           CONFIG_PACKAGE_luci-app-ddns-go=y
           CONFIG_PACKAGE_ddns-scripts_cloudflare.com-v4=y
           CONFIG_PACKAGE_luci-app-diskman=y
+          CONFIG_PACKAGE_docker-ce=y
           CONFIG_PACKAGE_luci-app-dockerman=y
           CONFIG_PACKAGE_luci-app-frpc=y
           # CONFIG_PACKAGE_luci-app-frps=y
