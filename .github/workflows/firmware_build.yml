@@ -31,8 +31,6 @@ jobs:
           # echo "src-git helloworld https://github.com/fw876/helloworld" >> ./feeds.conf.default 
           git clone https://github.com/kenzok8/openwrt-packages.git
           mkdir ./openwrt/package/openwrt-packages
-          git clone -b openwrt-21.02 --depth 1 https://github.com/openwrt/openwrt.git openwrt-21.02
-          cp -r openwrt-21.02/package/libs/openssl openwrt/package/libs
           # mv ./openwrt-packages/luci-app-aliddns ./package/openwrt-packages/luci-app-aliddns
           # mv ./openwrt-packages/luci-app-eqos ./package/openwrt-packages/luci-app-eqos
           # mv ./openwrt-packages/luci-app-wolplus ./package/openwrt-packages/luci-app-wolplus
@@ -72,17 +70,17 @@ jobs:
           CONFIG_PACKAGE_luci-app-ddns=n
           # CONFIG_PACKAGE_luci-app-ddns-go=y
           CONFIG_PACKAGE_ddns-scripts_cloudflare.com-v4=y
-          CONFIG_PACKAGE_dockerd=y
-          CONFIG_PACKAGE_docker=y
-          CONFIG_PACKAGE_containerd=y
-          CONFIG_PACKAGE_runc=y
-          CONFIG_PACKAGE_tini=y
-          CONFIG_PACKAGE_luci-app-dockerman=y
+          # CONFIG_PACKAGE_dockerd=y
+          # CONFIG_PACKAGE_docker=y
+          # CONFIG_PACKAGE_containerd=y
+          # CONFIG_PACKAGE_runc=y
+          # CONFIG_PACKAGE_tini=y
+          # CONFIG_PACKAGE_luci-app-dockerman=y
           CONFIG_PACKAGE_luci-app-frpc=y
           CONFIG_PACKAGE_frpc=y
-          CONFIG_PACKAGE_libopenssl=y
-          CONFIG_PACKAGE_libopenssl-conf=y
-          CONFIG_PACKAGE_openssl-util=y
+          # CONFIG_PACKAGE_libopenssl=y
+          # CONFIG_PACKAGE_libopenssl-conf=y
+          # CONFIG_PACKAGE_openssl-util=y
           # CONFIG_PACKAGE_luci-app-frps=y
           # CONFIG_PACKAGE_luci-app-hd-idle=y
           # CONFIG_PACKAGE_luci-app-mwan3=y
